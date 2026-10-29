@@ -56,17 +56,8 @@ button.pri { background:var(--acc); color:var(--accfg); border-color:var(--acc);
   <section><h2>2. Identificação da obra</h2><div class="grid">
     <div class="full"><label>Obra / logradouro</label><input id="obra" placeholder="Implantação de iluminação pública na Rua ..."></div>
     <div><label>Bairro</label><input id="bairro"></div>
-    <div><label>Tipo de ponto / Cota Expansão</label>
-      <select id="tipoPonto"><option value="">Selecione…</option>
-        <option>Cota Expansão 1 (CE1)</option><option>Cota Expansão 2 (CE2)</option><option>Cota Expansão 3 (CE3)</option><option>Cota Expansão 4 (CE4)</option>
-        <option>Cota Expansão 5 (CE5)</option><option>Cota Expansão 6 (CE6)</option><option>Cota Expansão 7 (CE7)</option><option>Cota Expansão 8 (CE8)</option></select></div>
-    <div><label>Ofício de solicitação (nº)</label><input id="ofSolic" placeholder="ex.: 6523/2026"></div>
-    <div><label>Carta da concessionária (nº)</label><input id="carta" placeholder="ex.: 019/2026"></div>
-    <div><label>Data da carta</label><input id="cartaData" type="date"></div>
-    <div><label>Ofício de aceite do orçamento (nº)</label><input id="ofAceite" placeholder="ex.: 10237/2026"></div>
-    <div><label>Data do ofício de aceite</label><input id="ofAceiteData" type="date"></div>
-    <div class="full"><label>Projeto executivo (folha, data, responsável técnico)</label><input id="projeto"></div>
-    <div><label>Data da vistoria</label><input id="vistoria" type="date"></div>
+    <div class="full"><label>Responsável técnico do projeto executivo</label><input id="projeto" placeholder="nome e CREA do responsável técnico">
+      <label style="display:flex;gap:6px;align-items:center;margin-top:6px;font-weight:normal"><input type="checkbox" id="higor" onchange="marcarHigor(this.checked)"> Eng. Higor dos Santos Alves (CREA BA-3000150337/D)</label></div>
   </div></section>
 
   <section><h2>3. Quantitativos e valores</h2>
@@ -548,14 +539,9 @@ function gerarTermo(jsPDF, D, footerB64) {
 
   // 1. Identificação
   head('1. IDENTIFICAÇÃO DA OBRA');
-  const ref = (n, d) => (n || d) ? `${n ? 'nº ' + n : ''}${n && d ? ', ' : ''}${d ? 'de ' + d : ''}` : '____________';
   tbl({ body: [
     ['Obra / logradouro', v(D.obra)], ['Bairro', v(D.bairro)],
-    ['Solicitação do Poder Concedente', D.ofSolic ? 'Ofício nº ' + D.ofSolic + ' – SMOB/DIIP' : '____________'],
-    ['Carta da concessionária', 'Carta ' + ref(D.carta, D.cartaData)],
-    ['Ofício de aceite do orçamento', 'Ofício ' + ref(D.ofAceite, D.ofAceiteData) + ' – SMOB/DIIP'],
-    ['Projeto executivo', v(D.projeto)], ['Tipo de ponto / Cota Expansão', v(D.tipoPonto)],
-    ['Data da vistoria', v(D.vistoria)],
+    ['Responsável técnico do projeto executivo', v(D.projeto)],
   ], columnStyles: { 0: { cellWidth: 55, fontStyle: 'bold', fillColor: [245, 247, 252] } } });
 
   // 2. Quantitativos
@@ -658,16 +644,11 @@ const CHECK = [
  'Quantidade de pontos instalados compatível com a quantidade autorizada',
  'Classificação do ponto (CE) compatível com a validada pelo Poder Concedente',
  'Luminárias, relés e demais materiais novos, com certificação INMETRO (Portaria nº 62/2022) e modelos conforme o projeto',
- 'Níveis de iluminância e uniformidade compatíveis com a ABNT NBR 5101 para a classe da via',
  'Postes, braços e fixações em boas condições, com altura de montagem, avanço e angulação conforme o projeto',
  'Cabeamento, conexões, proteções e aterramento executados conforme as normas técnicas e as notas do projeto',
  'Ligação à rede da distribuidora regularizada e sem pendências',
- 'Pontos acendendo e apagando corretamente (teste de funcionamento realizado na vistoria)',
- 'Pontos cadastrados e georreferenciados no sistema de gestão e no Cadastro Base, com telegestão operante quando aplicável',
  'Documentação entregue: as-built, ART/RRT, relatório fotográfico e memória de cálculo',
- 'Local limpo, passeio e pavimento recompostos, sem entulho ou materiais remanescentes',
- 'Ausência de interferência com arborização, edificações ou outros equipamentos urbanos',
- 'Segurança da execução e sinalização de obra atendidas'];
+ 'Ausência de interferência com arborização, edificações ou outros equipamentos urbanos'];
 const ASS0 = [
  {nome:'Pedro Augusto Rodrigues', cargo:'Diretor de Iluminação Pública', mat:'25.154-32', on:true},
  {nome:'Bruno Bernardi Leiria da Silva', cargo:'Engenheiro Eletricista Júnior – Fiscal de Obras', mat:'24.300-01', on:true},
@@ -709,15 +690,13 @@ function coletar() {
   const g = (id) => $(id).value;
   const assinantes = [...document.querySelectorAll('#assinantes .sig')].filter(r => r.querySelector('.on').checked).map(r => { const m = r.querySelector('.mat').value.trim();
     return { nome: r.querySelector('.nome').value.trim(), cargo: r.querySelector('.cargo').value.trim(), extra: r.dataset.cpf ? m : (m ? 'Matrícula ' + m : 'Matrícula ________') }; });
-  return { numero:g('numero'), ano:g('ano'), dataTermo: extenso(g('dataTermo')), obra:g('obra'), bairro:g('bairro'), tipoPonto:g('tipoPonto'),
-    ofSolic:g('ofSolic'), carta:g('carta'), cartaData:brDate(g('cartaData')), ofAceite:g('ofAceite'), ofAceiteData:brDate(g('ofAceiteData')), projeto:g('projeto'),
-    vistoria:brDate(g('vistoria')),
+  return { numero:g('numero'), ano:g('ano'), dataTermo: extenso(g('dataTermo')), obra:g('obra'), bairro:g('bairro'), projeto:g('projeto'),
     servicos:[...document.querySelectorAll('#servicos .srv')].map(r => ({desc:r.querySelector('.desc').value, qtdAut:r.querySelector('.qa').value, qtdExec:r.querySelector('.qe').value, unit:r.querySelector('.un').value})).filter(s => s.desc || s.qtdAut),
     checklist: CHECK.map((t, i) => ({desc:t, res:(document.querySelector('input[name=c'+i+']:checked') || {}).value || ''})),
     obsTec:g('obsTec'), pendencias:[...document.querySelectorAll('#pendencias .pen')].map(r => ({desc:r.querySelector('.desc').value, resp:r.querySelector('.resp').value, prazo:r.querySelector('.prazo').value})),
     decisao:(document.querySelector('input[name=dec]:checked') || {}).value || '', assinantes, fotos };
 }
-const CAMPOS = ['numero','ano','dataTermo','obra','bairro','tipoPonto','ofSolic','carta','cartaData','ofAceite','ofAceiteData','projeto','vistoria','obsTec'];
+const CAMPOS = ['numero','ano','dataTermo','obra','bairro','projeto','obsTec'];
 function snapshot() {
   const S = {}; CAMPOS.forEach(id => S[id] = $(id).value);
   S.servicos = [...document.querySelectorAll('#servicos .srv')].map(r => ({desc:r.querySelector('.desc').value, qtdAut:r.querySelector('.qa').value, qtdExec:r.querySelector('.qe').value, unit:r.querySelector('.un').value}));
@@ -728,7 +707,7 @@ function snapshot() {
   return S;
 }
 function restaurar(S) {
-  limpar(); CAMPOS.forEach(id => { $(id).value = S[id] || ''; });
+  limpar(); CAMPOS.forEach(id => { $(id).value = S[id] || ''; }); $('higor').checked = $('projeto').value === HIGOR;
   $('servicos').innerHTML = ''; $('pendencias').innerHTML = '';
   (S.servicos.length ? S.servicos : [{}]).forEach(addServ); (S.pendencias.length ? S.pendencias : [{}]).forEach(addPen);
   S.checks.forEach((v, i) => document.querySelectorAll('input[name=c'+i+']').forEach(r => r.checked = r.value === v));
@@ -750,12 +729,13 @@ function gerar() {
   doc.save('Termo_de_Aceite_' + (D.numero ? D.numero.replace(/\W/g,'-') + '_' : '') + slug + '.pdf');
   if ($('seq').checked) proximaObra(S);
 }
+const HIGOR = 'Eng. Higor dos Santos Alves, CREA BA-3000150337/D';
+function marcarHigor(on) { if (on) $('projeto').value = HIGOR; else if ($('projeto').value === HIGOR) $('projeto').value = ''; }
 function limpar() { document.querySelectorAll('.wrap input:not(.on):not([type=radio]):not(.nome):not(.cargo):not(.mat),.wrap textarea,.wrap select').forEach(e => { if (e.id !== 'ano') e.value = ''; });
-  document.querySelectorAll('input[type=radio]').forEach(r => r.checked = false); $('servicos').innerHTML = ''; $('pendencias').innerHTML = ''; fotos = []; renderFotos(); addServ(); addPen(); }
+  $('higor').checked = false; document.querySelectorAll('input[type=radio]').forEach(r => r.checked = false); $('servicos').innerHTML = ''; $('pendencias').innerHTML = ''; fotos = []; renderFotos(); addServ(); addPen(); }
 function exemplo() { limpar(); const set = (id, v) => { $(id).value = v; };
-  set('numero','001'); set('obra','Implantação de iluminação pública na Rua Manoel Laurindo (antiga Rua São Borja)'); set('bairro','Alto da Boa Vista'); set('tipoPonto','Cota Expansão 3 (CE3)');
-  set('ofSolic','6523/2026'); set('carta','019/2026'); set('cartaData','2026-08-14'); set('ofAceite','10237/2026'); set('ofAceiteData','2026-08-17');
-  set('projeto','Folha 01/01 – A1, de 03/08/2026 (Eng. Higor dos Santos Alves, CREA BA-3000150337/D)');
+  set('numero','001'); set('obra','Implantação de iluminação pública na Rua Manoel Laurindo (antiga Rua São Borja)'); set('bairro','Alto da Boa Vista');
+  set('projeto', HIGOR); $('higor').checked = true;
   set('obsTec','Luminária LED Tradetek Agnes 50W (AGN7050D4, 4000K); altura de montagem de 7,6 a 8 m; avanço de 2,50 m; angulação de 10°; derivação em cabo PP 3 x 1,5 mm² 1 kV; luminárias aterradas e ligadas em fases intercaladas (RS, RT, ST); via classe C4 (EN 13201).');
   $('servicos').innerHTML = ''; addServ({desc:'Instalação de ponto não exclusivo de iluminação pública adicional em outras vias – Cota Expansão 3', qtdAut:'26', unit:'661,62'}); }
 
