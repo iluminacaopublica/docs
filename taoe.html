@@ -45,7 +45,7 @@ button.pri { background:var(--acc); color:var(--accfg); border-color:var(--acc);
   <h1>Termo de Aceite de Obra de Expansão</h1>
   <p class="sub">SMOB/DIIP · Contrato nº 208/2025 · preencha os campos e gere o PDF com o timbrado da Prefeitura.</p>
   <div class="seq"><input type="checkbox" id="seq" checked onchange="store.set('seq', this.checked)"><label for="seq"><b>Gerar documentos em sequência.</b> Depois de gerar o PDF, o formulário limpa os dados da obra e mantém assinantes, ano e data do termo, pronto para a próxima obra.</label></div>
-  <div class="tools"><button onclick="exemplo()">Carregar exemplo (Rua Manoel Laurindo)</button><button onclick="limpar()">Limpar formulário</button></div>
+  <div class="tools"><button onclick="exemplo()">Carregar exemplo (Rua Manoel Laurindo)</button><select id="obraAprov" onchange="carregarObra(this.value)"></select><button onclick="limpar()">Limpar formulário</button></div>
 
   <section><h2>1. Termo</h2><div class="grid">
     <div><label>Nº do termo</label><input id="numero" placeholder="ex.: 012"></div>
@@ -729,6 +729,304 @@ function gerar() {
   doc.save('Termo_de_Aceite_' + (D.numero ? D.numero.replace(/\W/g,'-') + '_' : '') + slug + '.pdf');
   if ($('seq').checked) proximaObra(S);
 }
+// Obras com orçamento aprovado (ofícios SMOB/DIIP e painel obras.ipfoz.com.br, 30/10/2026). Campos vazios: preencher à mão.
+const OBRAS = [
+ {
+  "g": "Energizadas",
+  "l": "Rua Manoel Laurindo",
+  "obra": "Implantação de iluminação pública na Rua Manoel Laurindo (antiga Rua São Borja)",
+  "bairro": "Alto da Boa Vista",
+  "projeto": "Eng. Higor dos Santos Alves, CREA BA-3000150337/D",
+  "serv": [
+   {
+    "desc": "Instalação de ponto não exclusivo de iluminação pública adicional em outras vias – Cota Expansão 3",
+    "qtdAut": "26",
+    "unit": "661,62"
+   }
+  ]
+ },
+ {
+  "g": "Energizadas",
+  "l": "Avenida Bonito Lindo (cruz. Rua Inglaterra)",
+  "obra": "Implantação de iluminação pública na Avenida Bonito Lindo, cruzamento com a Rua Inglaterra",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "1",
+    "unit": "4.647,99"
+   }
+  ]
+ },
+ {
+  "g": "Energizadas",
+  "l": "Rua Joaquim Montegute",
+  "obra": "Implantação de iluminação pública na Rua Joaquim Montegute",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "4",
+    "unit": "4.647,99"
+   }
+  ]
+ },
+ {
+  "g": "Energizadas",
+  "l": "Rua João de Barro",
+  "obra": "Implantação de iluminação pública na Rua João de Barro",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "7",
+    "unit": "4.647,99"
+   }
+  ]
+ },
+ {
+  "g": "Energizadas",
+  "l": "Rua Anhembi",
+  "obra": "Implantação de iluminação pública na Rua Anhembi",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "5",
+    "unit": "4.647,99"
+   }
+  ]
+ },
+ {
+  "g": "Energizadas",
+  "l": "Rua Martin Nieuwenhoff",
+  "obra": "Implantação de iluminação pública na Rua Martin Nieuwenhoff",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 2",
+    "qtdAut": "4",
+    "unit": "5.174,19"
+   }
+  ]
+ },
+ {
+  "g": "Energizadas",
+  "l": "Praça da Rua Hermann F. x Rua Balduíno W.",
+  "obra": "Implantação de iluminação pública na Praça da Rua Hermann F. x Rua Balduíno W.",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "2",
+    "unit": "4.647,99"
+   }
+  ]
+ },
+ {
+  "g": "Energizadas",
+  "l": "Rua Paulo Colombelli",
+  "obra": "Implantação de iluminação pública na Rua Paulo Colombelli",
+  "bairro": "Três Lagoas",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "6",
+    "unit": "4.647,99"
+   }
+  ]
+ },
+ {
+  "g": "Energizadas",
+  "l": "Projeto Sol Nascente",
+  "obra": "Implantação de iluminação pública no Projeto Sol Nascente",
+  "bairro": "Morumbi",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 5",
+    "qtdAut": "2",
+    "unit": "2.134,48"
+   }
+  ]
+ },
+ {
+  "g": "Em execução",
+  "l": "Bosque Guarani",
+  "obra": "Implantação de iluminação pública no Bosque Guarani",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "206",
+    "unit": "4.647,92"
+   }
+  ]
+ },
+ {
+  "g": "Em execução",
+  "l": "Playground da Praça Sérgio Luiz Winkert",
+  "obra": "Implantação de iluminação pública no Playground da Praça Sérgio Luiz Winkert",
+  "bairro": "Alvorada",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "1",
+    "unit": "4.647,99"
+   }
+  ]
+ },
+ {
+  "g": "Em execução",
+  "l": "Alameda José dos Santos Veiga",
+  "obra": "Implantação de iluminação pública na Alameda José dos Santos Veiga",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "3",
+    "unit": "4.647,99"
+   }
+  ]
+ },
+ {
+  "g": "Em execução",
+  "l": "Avenida Paraná",
+  "obra": "Implantação de iluminação pública na Avenida Paraná",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 2",
+    "qtdAut": "17",
+    "unit": "5.174,19"
+   }
+  ]
+ },
+ {
+  "g": "Autorizadas",
+  "l": "Avenida João Paulo II",
+  "obra": "Implantação e modernização de iluminação pública na Avenida João Paulo II",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 2",
+    "qtdAut": "36",
+    "unit": "5.174,19"
+   },
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 4",
+    "qtdAut": "8",
+    "unit": "1.187,83"
+   }
+  ]
+ },
+ {
+  "g": "Autorizadas",
+  "l": "Avenida Fiorino Brol",
+  "obra": "Implantação de iluminação pública na Avenida Fiorino Brol",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 2",
+    "qtdAut": "208",
+    "unit": ""
+   }
+  ]
+ },
+ {
+  "g": "Autorizadas",
+  "l": "Campo CRG14",
+  "obra": "Implantação de iluminação pública no Campo CRG14",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "42",
+    "unit": ""
+   }
+  ]
+ },
+ {
+  "g": "Autorizadas",
+  "l": "Campo e entorno – B. Três Bandeiras",
+  "obra": "Implantação de iluminação pública no Campo e Entorno do Bairro Três Bandeiras",
+  "bairro": "Três Bandeiras",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 1",
+    "qtdAut": "21",
+    "unit": ""
+   }
+  ]
+ },
+ {
+  "g": "Autorizadas",
+  "l": "Avenida Alemanha",
+  "obra": "Implantação de iluminação pública na Avenida Alemanha",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 2",
+    "qtdAut": "26",
+    "unit": "5.174,19"
+   },
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 4",
+    "qtdAut": "1",
+    "unit": "1.187,83"
+   }
+  ]
+ },
+ {
+  "g": "Autorizadas",
+  "l": "Rua Argemiro Lemos",
+  "obra": "Implantação de iluminação pública na Rua Argemiro Lemos",
+  "bairro": "",
+  "projeto": "",
+  "serv": [
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 2",
+    "qtdAut": "171",
+    "unit": "5.174,19"
+   },
+   {
+    "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 4",
+    "qtdAut": "5",
+    "unit": "1.187,83"
+   }
+  ]
+ }
+];
+function carregarObra(i) {
+  if (i === '') return; const o = OBRAS[+i];
+  const keep = { numero: $('numero').value, ano: $('ano').value, dataTermo: $('dataTermo').value };
+  limpar(); Object.keys(keep).forEach(k => { $(k).value = keep[k]; });
+  $('obra').value = o.obra; $('bairro').value = o.bairro; $('projeto').value = o.projeto; $('higor').checked = o.projeto === HIGOR;
+  $('servicos').innerHTML = ''; o.serv.forEach(addServ);
+  $('stat').textContent = 'Termo pré-preenchido: ' + o.l + '. Confira os dados e informe as quantidades executadas.';
+  $('obraAprov').value = '';
+}
+function montarObras() {
+  let h = '<option value="">Obras com orçamento aprovado…</option>', g = '';
+  OBRAS.forEach((o, i) => { if (o.g !== g) { if (g) h += '</optgroup>'; g = o.g; h += '<optgroup label="' + g + '">'; } h += '<option value="' + i + '">' + o.l + '</option>'; });
+  $('obraAprov').innerHTML = h + '</optgroup>';
+}
 const HIGOR = 'Eng. Higor dos Santos Alves, CREA BA-3000150337/D';
 function marcarHigor(on) { if (on) $('projeto').value = HIGOR; else if ($('projeto').value === HIGOR) $('projeto').value = ''; }
 function limpar() { document.querySelectorAll('.wrap input:not(.on):not([type=radio]):not(.nome):not(.cargo):not(.mat),.wrap textarea,.wrap select').forEach(e => { if (e.id !== 'ano') e.value = ''; });
@@ -739,7 +1037,7 @@ function exemplo() { limpar(); const set = (id, v) => { $(id).value = v; };
   set('obsTec','Luminária LED Tradetek Agnes 50W (AGN7050D4, 4000K); altura de montagem de 7,6 a 8 m; avanço de 2,50 m; angulação de 10°; derivação em cabo PP 3 x 1,5 mm² 1 kV; luminárias aterradas e ligadas em fases intercaladas (RS, RT, ST); via classe C4 (EN 13201).');
   $('servicos').innerHTML = ''; addServ({desc:'Instalação de ponto não exclusivo de iluminação pública adicional em outras vias – Cota Expansão 3', qtdAut:'26', unit:'661,62'}); }
 
-function init() { buildChecklist(); (store.get('ass3') || ASS0).forEach(addAss); addServ(); addPen(); const s = store.get('seq'); $('seq').checked = s === null || s === undefined ? true : !!s; }
+function init() { buildChecklist(); montarObras(); (store.get('ass3') || ASS0).forEach(addAss); addServ(); addPen(); const s = store.get('seq'); $('seq').checked = s === null || s === undefined ? true : !!s; }
 init();
 </script>
 </body>

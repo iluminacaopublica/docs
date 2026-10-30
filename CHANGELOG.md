@@ -2,6 +2,13 @@
 
 Formulário de Termo de Aceite de Obra de Expansão (TAOE) · SMOB/DIIP · Contrato nº 208/2025.
 
+## 1.2 – 30/10/2026
+
+### Adicionado
+- Menu "Obras com orçamento aprovado", ao lado de "Carregar exemplo", com as 19 obras autorizadas (energizadas, em execução e autorizadas). Ao escolher uma obra, o termo é pré-preenchido com logradouro, bairro, serviços (cota, quantidade autorizada e valor unitário) e, quando conhecido, o responsável técnico.
+- Número, ano e data do termo são mantidos ao trocar de obra. Quantidades executadas, vistoria, pendências e decisão ficam para o fiscal.
+- Dados dos ofícios SMOB/DIIP cruzados com o painel obras.ipfoz.com.br. O que não consta nos ofícios fica em branco.
+
 ## 1.1 – 29/10/2026
 
 ### Alterado
