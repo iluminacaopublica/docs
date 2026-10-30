@@ -33,6 +33,8 @@ button.pri { background:var(--acc); color:var(--accfg); border-color:var(--acc);
 .fc { border:1px solid var(--line); border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:6px; }
 .fc img { width:100%; height:120px; object-fit:cover; border-radius:6px; }
 .fc .b { display:flex; gap:4px; } .fc .b button { padding:2px 8px; font-size:12px; }
+#avisoObra { background:#fdecea; border:1px solid #d93025; border-left:5px solid #d93025; color:#a50e0e; font-weight:600; padding:10px 12px; border-radius:6px; margin-bottom:10px; font-size:14px; }
+#avisoObra[hidden] { display:none; }
 .mini { padding:4px 10px; font-size:13px; } .tools { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
 .seq { display:flex; align-items:flex-start; gap:8px; margin:0 0 10px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--soft); font-size:14px; }
 .seq input { width:auto; margin:4px 0 0; } .seq label { margin:0; color:var(--fg); cursor:pointer; }
@@ -46,6 +48,7 @@ button.pri { background:var(--acc); color:var(--accfg); border-color:var(--acc);
   <p class="sub">SMOB/DIIP · Contrato nº 208/2025 · preencha os campos e gere o PDF com o timbrado da Prefeitura.</p>
   <div class="seq"><input type="checkbox" id="seq" checked onchange="store.set('seq', this.checked)"><label for="seq"><b>Gerar documentos em sequência.</b> Depois de gerar o PDF, o formulário limpa os dados da obra e mantém assinantes, ano e data do termo, pronto para a próxima obra.</label></div>
   <div class="tools"><button onclick="exemplo()">Carregar exemplo (Rua Manoel Laurindo)</button><select id="obraAprov" onchange="carregarObra(this.value)"></select><button onclick="limpar()">Limpar formulário</button></div>
+  <div id="avisoObra" hidden></div>
 
   <section><h2>1. Termo</h2><div class="grid">
     <div><label>Nº do termo</label><input id="numero" placeholder="ex.: 012"></div>
@@ -860,6 +863,7 @@ const OBRAS = [
  {
   "g": "Em execução",
   "l": "Bosque Guarani",
+  "aviso": "Verifique a quantidade de pontos: a Carta 021/2026 e o Ofício 11301/2026 autorizam 206 pontos, mas o painel da IPFOZ mostra 234. Não consta aprovação de alteração de quantitativo.",
   "obra": "Implantação de iluminação pública no Bosque Guarani",
   "bairro": "",
   "projeto": "",
@@ -874,6 +878,7 @@ const OBRAS = [
  {
   "g": "Em execução",
   "l": "Playground da Praça Sérgio Luiz Winkert",
+  "aviso": "Verifique a quantidade de pontos: o Ofício 11341/2026 aprovou 1 ponto (1 poste com 3 luminárias), mas o painel da IPFOZ conta 3 pontos.",
   "obra": "Implantação de iluminação pública no Playground da Praça Sérgio Luiz Winkert",
   "bairro": "Alvorada",
   "projeto": "",
@@ -916,6 +921,7 @@ const OBRAS = [
  {
   "g": "Autorizadas",
   "l": "Avenida João Paulo II",
+  "aviso": "Verifique se os 44 pontos são mesmo adicionais (Cota Expansão). O Ofício 10982/2026 trata de implantação e modernização; ponto que apenas substitui luminária existente não é pago como Cota Expansão.",
   "obra": "Implantação e modernização de iluminação pública na Avenida João Paulo II",
   "bairro": "",
   "projeto": "",
@@ -935,6 +941,7 @@ const OBRAS = [
  {
   "g": "Autorizadas",
   "l": "Avenida Fiorino Brol",
+  "aviso": "Verifique a quantidade de pontos: a Carta 020/2026 e o Ofício 11372/2026 autorizam 208 pontos, mas o painel da IPFOZ mostra 209.",
   "obra": "Implantação de iluminação pública na Avenida Fiorino Brol",
   "bairro": "",
   "projeto": "",
@@ -942,13 +949,14 @@ const OBRAS = [
    {
     "desc": "Instalação de ponto de iluminação pública adicional – Cota Expansão 2",
     "qtdAut": "208",
-    "unit": ""
+    "unit": "5.174,11"
    }
   ]
  },
  {
   "g": "Autorizadas",
   "l": "Campo CRG14",
+  "aviso": "Verifique se há aprovação de orçamento: os Ofícios 7456/2026 e 9201/2026 apenas solicitaram estudo de viabilidade e projeto, e o painel da IPFOZ já os conta como autorizados. Pontos que não forem de Cota Expansão não serão pagos por ela.",
   "obra": "Implantação de iluminação pública no Campo CRG14",
   "bairro": "",
   "projeto": "",
@@ -963,6 +971,7 @@ const OBRAS = [
  {
   "g": "Autorizadas",
   "l": "Campo e entorno – B. Três Bandeiras",
+  "aviso": "Verifique se há aprovação de orçamento: os Ofícios 7456/2026 e 9201/2026 apenas solicitaram estudo de viabilidade e projeto, e o painel da IPFOZ já os conta como autorizados. Pontos que não forem de Cota Expansão não serão pagos por ela.",
   "obra": "Implantação de iluminação pública no Campo e Entorno do Bairro Três Bandeiras",
   "bairro": "Três Bandeiras",
   "projeto": "",
@@ -1020,8 +1029,9 @@ function carregarObra(i) {
   $('obra').value = o.obra; $('bairro').value = o.bairro; $('projeto').value = o.projeto; $('higor').checked = o.projeto === HIGOR;
   $('servicos').innerHTML = ''; o.serv.forEach(addServ);
   $('stat').textContent = 'Termo pré-preenchido: ' + o.l + '. Confira os dados e informe as quantidades executadas.';
-  $('obraAprov').value = '';
+  $('obraAprov').value = ''; avisar(o.aviso);
 }
+function avisar(t) { const a = $('avisoObra'); a.hidden = !t; a.textContent = t ? '⚠ ATENÇÃO: ' + t : ''; }
 function montarObras() {
   let h = '<option value="">Obras com orçamento aprovado…</option>', g = '';
   OBRAS.forEach((o, i) => { if (o.g !== g) { if (g) h += '</optgroup>'; g = o.g; h += '<optgroup label="' + g + '">'; } h += '<option value="' + i + '">' + o.l + '</option>'; });
@@ -1029,7 +1039,7 @@ function montarObras() {
 }
 const HIGOR = 'Eng. Higor dos Santos Alves, CREA BA-3000150337/D';
 function marcarHigor(on) { if (on) $('projeto').value = HIGOR; else if ($('projeto').value === HIGOR) $('projeto').value = ''; }
-function limpar() { document.querySelectorAll('.wrap input:not(.on):not([type=radio]):not(.nome):not(.cargo):not(.mat),.wrap textarea,.wrap select').forEach(e => { if (e.id !== 'ano') e.value = ''; });
+function limpar() { avisar(''); document.querySelectorAll('.wrap input:not(.on):not([type=radio]):not(.nome):not(.cargo):not(.mat),.wrap textarea,.wrap select').forEach(e => { if (e.id !== 'ano') e.value = ''; });
   $('higor').checked = false; document.querySelectorAll('input[type=radio]').forEach(r => r.checked = false); $('servicos').innerHTML = ''; $('pendencias').innerHTML = ''; fotos = []; renderFotos(); addServ(); addPen(); }
 function exemplo() { limpar(); const set = (id, v) => { $(id).value = v; };
   set('numero','001'); set('obra','Implantação de iluminação pública na Rua Manoel Laurindo (antiga Rua São Borja)'); set('bairro','Alto da Boa Vista');
