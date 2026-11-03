@@ -59,12 +59,6 @@ button.pri { background:var(--acc); color:var(--accfg); border-color:var(--acc);
   <section><h2>2. Identificação da obra</h2><div class="grid">
     <div class="full"><label>Obra / logradouro</label><input id="obra" placeholder="Implantação de iluminação pública na Rua ..."></div>
     <div><label>Bairro</label><input id="bairro"></div>
-    <div><label>Ofício de aprovação do projeto <small>(opcional)</small></label><input id="ofProjeto" placeholder="ex.: 11301/2026"></div>
-    <div><label>Carta da concessionária <small>(opcional)</small></label><input id="cartaIP" placeholder="ex.: 020/2026"></div>
-    <div><label>ART de execução, CREA-PR <small>(opcional)</small></label><input id="art" placeholder="nº da ART"></div>
-    <div><label>Comunicação de conclusão da obra <small>(opcional)</small></label><input id="dtConclusao" type="date"></div>
-    <div><label>Data da energização <small>(opcional)</small></label><input id="dtEnergia" type="date"></div>
-    <div><label>Placa de obra no padrão do Município <small>(opcional)</small></label><select id="placa"><option value=""></option><option value="Sim">Sim</option><option value="Não">Não</option><option value="N/A">N/A</option></select></div>
     <div class="full"><label>Responsável técnico do projeto executivo</label><input id="projeto" placeholder="nome e CREA do responsável técnico">
       <label style="display:flex;gap:6px;align-items:center;margin-top:6px;font-weight:normal"><input type="checkbox" id="higor" onchange="marcarHigor(this.checked)"> Eng. Higor dos Santos Alves (CREA BA-3000150337/D)</label></div>
   </div></section>
@@ -552,10 +546,7 @@ function gerarTermo(jsPDF, D, footerB64) {
   tbl({ body: [
     ['Obra / logradouro', v(D.obra)], ['Bairro', v(D.bairro)],
     ['Responsável técnico do projeto executivo', v(D.projeto)],
-  ].concat([
-    ['Ofício de aprovação do projeto', D.ofProjeto], ['Carta da concessionária', D.cartaIP], ['ART de execução (CREA-PR)', D.art],
-    ['Comunicação de conclusão da obra', D.dtConclusao], ['Data da energização', D.dtEnergia], ['Placa de obra no padrão do Município', D.placa],
-  ].filter(r => (r[1] || '').trim())), columnStyles: { 0: { cellWidth: 55, fontStyle: 'bold', fillColor: [245, 247, 252] } } });
+  ], columnStyles: { 0: { cellWidth: 55, fontStyle: 'bold', fillColor: [245, 247, 252] } } });
 
   // 2. Quantitativos
   head('2. QUANTITATIVOS E VALORES');
@@ -703,13 +694,13 @@ function coletar() {
   const g = (id) => $(id).value;
   const assinantes = [...document.querySelectorAll('#assinantes .sig')].filter(r => r.querySelector('.on').checked).map(r => { const m = r.querySelector('.mat').value.trim();
     return { nome: r.querySelector('.nome').value.trim(), cargo: r.querySelector('.cargo').value.trim(), extra: r.dataset.cpf ? m : (m ? 'Matrícula ' + m : 'Matrícula ________') }; });
-  return { numero:g('numero'), ano:g('ano'), dataTermo: extenso(g('dataTermo')), obra:g('obra'), bairro:g('bairro'), ofProjeto:g('ofProjeto'), cartaIP:g('cartaIP'), art:g('art'), dtConclusao: extenso(g('dtConclusao')), dtEnergia: extenso(g('dtEnergia')), placa:g('placa'), projeto:g('projeto'),
+  return { numero:g('numero'), ano:g('ano'), dataTermo: extenso(g('dataTermo')), obra:g('obra'), bairro:g('bairro'), projeto:g('projeto'),
     servicos:[...document.querySelectorAll('#servicos .srv')].map(r => ({desc:r.querySelector('.desc').value, qtdAut:r.querySelector('.qa').value, qtdExec:r.querySelector('.qe').value, unit:r.querySelector('.un').value})).filter(s => s.desc || s.qtdAut),
     checklist: CHECK.map((t, i) => ({desc:t, res:(document.querySelector('input[name=c'+i+']:checked') || {}).value || ''})),
     obsTec:g('obsTec'), pendencias:[...document.querySelectorAll('#pendencias .pen')].map(r => ({desc:r.querySelector('.desc').value, resp:r.querySelector('.resp').value, prazo:r.querySelector('.prazo').value})),
     decisao:(document.querySelector('input[name=dec]:checked') || {}).value || '', assinantes, fotos };
 }
-const CAMPOS = ['numero','ano','dataTermo','obra','bairro','ofProjeto','cartaIP','art','dtConclusao','dtEnergia','placa','projeto','obsTec'];
+const CAMPOS = ['numero','ano','dataTermo','obra','bairro','projeto','obsTec'];
 function snapshot() {
   const S = {}; CAMPOS.forEach(id => S[id] = $(id).value);
   S.servicos = [...document.querySelectorAll('#servicos .srv')].map(r => ({desc:r.querySelector('.desc').value, qtdAut:r.querySelector('.qa').value, qtdExec:r.querySelector('.qe').value, unit:r.querySelector('.un').value}));

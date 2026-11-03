@@ -2,6 +2,11 @@
 
 Formulário de Relatório de Vistoria com Parecer de Fiscalização (antes: Termo de Aceite de Obra de Expansão) · SMOB/DIIP · Contrato nº 208/2025.
 
+## 2.1 – 03/11/2026
+
+### Removido
+- Campos opcionais da versão 2.0 (ofício de aprovação do projeto, carta da concessionária, ART, data de conclusão, data de energização e placa de obra): dificultavam o preenchimento rotineiro.
+
 ## 2.0 – 01/11/2026
 
 ### Alterado
