@@ -1,6 +1,20 @@
 # Changelog
 
-Formulário de Termo de Aceite de Obra de Expansão (TAOE) · SMOB/DIIP · Contrato nº 208/2025.
+Formulário de Relatório de Vistoria com Parecer de Fiscalização (antes: Termo de Aceite de Obra de Expansão) · SMOB/DIIP · Contrato nº 208/2025.
+
+## 2.0 – 01/11/2026
+
+### Alterado
+- O documento deixa de ser "Termo de Aceite de Obra de Expansão" e passa a ser **Relatório de Vistoria com Parecer de Fiscalização**. O Termo de Aceite é ato do Verificador Independente (Caderno de Encargos, item 16.1.12); a Prefeitura registra a vistoria e emite parecer, sem aceitar a obra.
+- Decisão (aceitar / aceitar com ressalvas / não aceitar) substituída por parecer: conforme o projeto aprovado, com pendências ou em desconformidade.
+- Disposições finais reescritas: o relatório não substitui o Termo de Aceite da OPUS, não exclui a responsabilidade da concessionária e é encaminhado por ofício à concessionária, com cópia ao Verificador Independente.
+- "Vistoria de recebimento" passa a "Vistoria em campo"; arquivo gerado agora se chama `Relatorio_de_Vistoria_...pdf`.
+
+### Adicionado
+- Campos opcionais na identificação da obra, que só aparecem no PDF quando preenchidos: ofício de aprovação do projeto, carta da concessionária, ART de execução (CREA-PR), comunicação de conclusão da obra (Anexo 4, item 7.2.4), data da energização e placa de obra no padrão do Município.
+
+### Removido
+- Condicionamento da liberação de valores ao saneamento das pendências e a frase de que a obra aceita passa a integrar a rede municipal.
 
 ## 1.3 – 30/10/2026
 
