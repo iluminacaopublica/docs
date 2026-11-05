@@ -708,7 +708,7 @@ function addPen(p) { p = p || {}; const d = document.createElement('div'); d.cla
   d.innerHTML = `<div><label>Descrição</label><input class="desc" value="${esc(p.desc)}"></div><div><label>Responsável</label><input class="resp" value="${esc(p.resp)}"></div><div><label>Prazo</label><input class="prazo" value="${esc(p.prazo)}"></div><button class="mini" onclick="this.parentNode.remove()">Remover</button>`;
   $('pendencias').appendChild(d); }
 function addAss(a) { a = (a && a.cargo !== undefined) ? a : {nome:'', cargo:'', mat:'', on:true}; const d = document.createElement('div'); d.className = 'sig'; if (a.cpf) d.dataset.cpf = '1'; if (a.ip) d.dataset.ip = '1';
-  d.innerHTML = `<input type="checkbox" class="on" ${a.on ? 'checked' : ''} style="width:20px;height:20px"><div><label>Nome</label><input class="nome" value="${esc(a.nome)}" placeholder="nome completo"></div><div><label>Cargo</label><input class="cargo" value="${esc(a.cargo)}"></div><div><label>${a.cpf ? 'Cargo / CPF' : 'Matrícula'}</label><input class="mat" value="${esc(a.mat)}"></div>`;
+  d.innerHTML = `<input type="checkbox" class="on" ${a.on ? 'checked' : ''} style="width:20px;height:20px"><div><label>Nome</label><input class="nome" value="${esc(a.nome)}" placeholder="nome completo"></div><div><label>Cargo</label><input class="cargo" value="${esc(a.cargo)}"></div><div><label>${a.cpf ? 'CPF' : 'Matrícula'}</label><input class="mat" value="${esc(a.mat)}"></div>`;
   $('assinantes').appendChild(d); }
 function buildChecklist() { $('checklist').innerHTML = CHECK.map((t, i) => `<div class="chk"><div class="t">${i+1}. ${t}</div><div class="opts"><label><input type="radio" name="c${i}" value="sim">Sim</label><label><input type="radio" name="c${i}" value="nao">Não</label><label><input type="radio" name="c${i}" value="na">N/A</label></div></div>`).join(''); }
 function marcar(v) { CHECK.forEach((_, i) => document.querySelectorAll('input[name=c'+i+']').forEach(r => r.checked = !!v && r.value === v)); }
@@ -716,7 +716,7 @@ function marcar(v) { CHECK.forEach((_, i) => document.querySelectorAll('input[na
 function coletar() {
   const g = (id) => $(id).value;
   const assinantes = [...document.querySelectorAll('#assinantes .sig')].filter(r => r.querySelector('.on').checked).map(r => { const m = r.querySelector('.mat').value.trim();
-    return { ip: !!r.dataset.ip, nome: r.querySelector('.nome').value.trim(), cargo: r.querySelector('.cargo').value.trim(), extra: r.dataset.cpf ? m : (m ? 'Matrícula ' + m : 'Matrícula ________') }; })
+    return { ip: !!r.dataset.ip, nome: r.querySelector('.nome').value.trim(), cargo: r.querySelector('.cargo').value.trim(), extra: r.dataset.cpf ? (m ? 'CPF ' + m.replace(/^\s*CPF\s*:?\s*/i, '') : '') : (m ? 'Matrícula ' + m : '') }; })
     .sort((a, b) => a.ip - b.ip);
   return { numero:g('numero'), ano:g('ano'), dataTermo: extenso(g('dataTermo')), obra:g('obra'), bairro:g('bairro'), projeto:g('projeto'),
     servicos:[...document.querySelectorAll('#servicos .srv')].map(r => ({desc:r.querySelector('.desc').value, qtdAut:r.querySelector('.qa').value, qtdExec:r.querySelector('.qe').value, unit:r.querySelector('.un').value})).filter(s => s.desc || s.qtdAut),
@@ -1088,7 +1088,7 @@ function exemplo() { limpar(); const set = (id, v) => { $(id).value = v; };
 
 function carregarAss() {
   const a = store.get('ass3'); if (!a) return ASS0;
-  a.forEach(x => { if (x.cpf) x.ip = true; });
+  a.forEach(x => { if (x.cpf) x.ip = true; const p = IPFOZ.find(q => q.nome === x.nome); if (p) { x.cpf = true; x.ip = true; x.cargo = p.cargo; } });
   IPFOZ.forEach(p => { if (!a.some(x => x.nome === p.nome)) { const i = a.findIndex(x => x.ip); a.splice(i < 0 ? a.length : i, 0, {...p}); } });
   return a; }
 function init() { buildChecklist(); montarObras(); carregarAss().forEach(addAss); renderHist(); addServ(); addPen(); const s = store.get('seq'); $('seq').checked = s === null || s === undefined ? true : !!s; }
