@@ -9,7 +9,16 @@
 @media (prefers-color-scheme: dark) { :root { --bg:#12161f; --card:#1b2130; --fg:#e8ecf4; --mut:#9aa5b8; --line:#2f3a50; --acc:#6f93d8; --accfg:#0d1220; --soft:#232c40; } }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
-.wrap { max-width:980px; margin:0 auto; padding:20px 16px 90px; }
+.layout { max-width:1280px; margin:0 auto; padding:20px 16px 90px; display:flex; gap:16px; align-items:flex-start; }
+.wrap { flex:1; min-width:0; max-width:980px; }
+.hist { width:250px; flex:none; position:sticky; top:16px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; max-height:calc(100vh - 100px); overflow:auto; }
+.hist h3 { font-size:13px; margin:0 0 4px; color:var(--acc); text-transform:uppercase; letter-spacing:.04em; }
+.hist .hs { font-size:12px; color:var(--mut); margin:0 0 8px; }
+.hi { border-top:1px solid var(--line); padding:6px 0; font-size:12.5px; display:grid; grid-template-columns:auto 1fr auto; gap:2px 8px; align-items:start; }
+.hi b { color:var(--acc); } .hi .o { overflow-wrap:anywhere; } .hi .d { grid-column:2; color:var(--mut); font-size:11.5px; }
+.hi button { padding:0 6px; font-size:12px; border:0; background:none; color:var(--mut); }
+.hi.dup { background:#fdecea; } .hist .empty { font-size:12.5px; color:var(--mut); }
+@media (max-width:900px){ .layout { flex-direction:column; } .hist { width:100%; position:static; max-height:240px; } }
 h1 { font-size:22px; margin:0 0 4px; } .sub { color:var(--mut); margin:0 0 18px; }
 section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; }
 h2 { font-size:15px; margin:0 0 12px; color:var(--acc); text-transform:uppercase; letter-spacing:.04em; }
@@ -43,6 +52,8 @@ button.pri { background:var(--acc); color:var(--accfg); border-color:var(--acc);
 </style>
 </head>
 <body>
+<div class="layout">
+<aside class="hist"><h3>Histórico de PDFs</h3><p class="hs">Número atribuído a cada obra neste navegador. O próximo número sugerido considera o maior já usado.</p><div id="histList"></div><div class="tools" style="margin:8px 0 0"><button class="mini" onclick="limparHist()">Limpar histórico</button></div></aside>
 <div class="wrap">
   <h1>Relatório de Vistoria com Parecer de Fiscalização</h1>
   <p class="sub">SMOB/DIIP · Contrato nº 208/2025 · preencha os campos e gere o PDF com o timbrado da Prefeitura.</p>
@@ -88,6 +99,7 @@ button.pri { background:var(--acc); color:var(--accfg); border-color:var(--acc);
   <section><h2>8. Assinaturas</h2>
     <p class="sub" style="margin-top:0">Marque quem assina neste relatório. Nome, cargo e matrícula ficam salvos neste navegador para as próximas obras.</p>
     <div id="assinantes"></div><button class="mini" onclick="addAss()">+ Adicionar assinante</button></section>
+</div>
 </div>
 <div class="bar"><span id="stat"></span><button id="bDesf" onclick="desfazer()" hidden>Restaurar obra anterior</button><button class="pri" onclick="gerar()">Gerar PDF</button></div>
 
@@ -589,25 +601,32 @@ function gerarTermo(jsPDF, D, footerB64) {
   para('Este relatório registra a vistoria e o parecer da fiscalização do contrato. Não substitui o TERMO DE ACEITE, ato do VERIFICADOR INDEPENDENTE (CADERNO DE ENCARGOS, item 16.1.12), e não exclui a responsabilidade da concessionária pela adequação e qualidade da obra, inclusive quanto a vícios ocultos, garantias e à operação e manutenção da rede, nos termos do CONTRATO Nº 208/2025.', { justify: true });
   para('Os pontos verificados deverão constar no cadastro da rede e nos relatórios mensais de acompanhamento.', { justify: true });
   para('Este relatório será encaminhado à concessionária por ofício, com cópia ao VERIFICADOR INDEPENDENTE.', { justify: true, after: 6 });
-  space(14 + Math.ceil(D.assinantes.length / 2) * 38);
+  space(14 + Math.ceil(D.assinantes.length / 2) * 38 + (D.assinantes.some(s => s.ip) ? 14 : 0));
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(`Foz do Iguaçu, ${D.dataTermo || '____ de ______________ de 2026'}.`, PW - R, y, { align: 'right' }); y += 14;
 
-  // Assinaturas
-  const sig = D.assinantes;
-  for (let i = 0; i < sig.length; i += 2) {
-    space(40);
-    let maxH = 0;
-    [0, 1].forEach(k => {
-      const s = sig[i + k]; if (!s) return;
-      const cx = L + CW / 4 + k * CW / 2;
-      doc.setDrawColor(0); doc.setLineWidth(0.3); doc.line(cx - 38, y, cx + 38, y);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text(doc.splitTextToSize(s.nome || '', 78), cx, y + 5, { align: 'center' });
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-      const cargo = doc.splitTextToSize(s.cargo, 78); doc.text(cargo, cx, y + 10, { align: 'center' });
-      doc.text(s.extra || '', cx, y + 10 + cargo.length * 4, { align: 'center' });
-      maxH = Math.max(maxH, 10 + cargo.length * 4 + 4);
-    });
-    y += Math.max(maxH, 20) + 16;
+  // Assinaturas (servidores da Prefeitura; depois, "Ciente (s):" com o pessoal da IP FOZ)
+  const sigBlock = (sig) => {
+    for (let i = 0; i < sig.length; i += 2) {
+      space(40);
+      let maxH = 0;
+      [0, 1].forEach(k => {
+        const s = sig[i + k]; if (!s) return;
+        const cx = L + CW / 4 + k * CW / 2;
+        doc.setDrawColor(0); doc.setLineWidth(0.3); doc.line(cx - 38, y, cx + 38, y);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text(doc.splitTextToSize(s.nome || '', 78), cx, y + 5, { align: 'center' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+        const cargo = doc.splitTextToSize(s.cargo, 78); doc.text(cargo, cx, y + 10, { align: 'center' });
+        doc.text(s.extra || '', cx, y + 10 + cargo.length * 4, { align: 'center' });
+        maxH = Math.max(maxH, 10 + cargo.length * 4 + 4);
+      });
+      y += Math.max(maxH, 20) + 16;
+    }
+  };
+  sigBlock(D.assinantes.filter(s => !s.ip));
+  const ciente = D.assinantes.filter(s => s.ip);
+  if (ciente.length) {
+    space(52); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0);
+    doc.text('Ciente (s):', L, y); y += 14; sigBlock(ciente);
   }
 
   // Anexo: relatório fotográfico (2 fotos por página)
@@ -660,7 +679,11 @@ const ASS0 = [
  {nome:'Pablo Shimoe Paganoto', cargo:'Engenheiro Eletricista Júnior – Fiscal de Obras', mat:'24.716-01', on:true},
  {nome:'Antelmo Arceles', cargo:'Ajudante de Serviços Gerais', mat:'10.000-01', on:false},
  {nome:'Alecsandro Broio Oliveira', cargo:'Secretário Municipal de Obras', mat:'25.157-94', on:true},
- {nome:'', cargo:'Representante da IP FOZ – Ciente', mat:'', on:true, cpf:true}];
+ {nome:'', cargo:'Representante da IP FOZ', mat:'', on:false, cpf:true, ip:true}];
+const IPFOZ = [
+ {nome:'Daniella de Oliveira', cargo:'Coordenadora de Obras e Projetos IP FOZ', mat:'', on:false, cpf:true, ip:true},
+ {nome:'Alan Pereira Silva', cargo:'Diretor IP FOZ', mat:'', on:false, cpf:true, ip:true}];
+ASS0.splice(ASS0.length - 1, 0, ...IPFOZ);
 const $ = (id) => document.getElementById(id);
 const store = { get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} } };
 const esc = (s) => String(s == null ? '' : s).replace(/"/g,'&quot;');
@@ -684,7 +707,7 @@ function addServ(s) { s = s || {}; const d = document.createElement('div'); d.cl
 function addPen(p) { p = p || {}; const d = document.createElement('div'); d.className = 'row pen';
   d.innerHTML = `<div><label>Descrição</label><input class="desc" value="${esc(p.desc)}"></div><div><label>Responsável</label><input class="resp" value="${esc(p.resp)}"></div><div><label>Prazo</label><input class="prazo" value="${esc(p.prazo)}"></div><button class="mini" onclick="this.parentNode.remove()">Remover</button>`;
   $('pendencias').appendChild(d); }
-function addAss(a) { a = (a && a.cargo !== undefined) ? a : {nome:'', cargo:'', mat:'', on:true}; const d = document.createElement('div'); d.className = 'sig'; if (a.cpf) d.dataset.cpf = '1';
+function addAss(a) { a = (a && a.cargo !== undefined) ? a : {nome:'', cargo:'', mat:'', on:true}; const d = document.createElement('div'); d.className = 'sig'; if (a.cpf) d.dataset.cpf = '1'; if (a.ip) d.dataset.ip = '1';
   d.innerHTML = `<input type="checkbox" class="on" ${a.on ? 'checked' : ''} style="width:20px;height:20px"><div><label>Nome</label><input class="nome" value="${esc(a.nome)}" placeholder="nome completo"></div><div><label>Cargo</label><input class="cargo" value="${esc(a.cargo)}"></div><div><label>${a.cpf ? 'Cargo / CPF' : 'Matrícula'}</label><input class="mat" value="${esc(a.mat)}"></div>`;
   $('assinantes').appendChild(d); }
 function buildChecklist() { $('checklist').innerHTML = CHECK.map((t, i) => `<div class="chk"><div class="t">${i+1}. ${t}</div><div class="opts"><label><input type="radio" name="c${i}" value="sim">Sim</label><label><input type="radio" name="c${i}" value="nao">Não</label><label><input type="radio" name="c${i}" value="na">N/A</label></div></div>`).join(''); }
@@ -693,7 +716,8 @@ function marcar(v) { CHECK.forEach((_, i) => document.querySelectorAll('input[na
 function coletar() {
   const g = (id) => $(id).value;
   const assinantes = [...document.querySelectorAll('#assinantes .sig')].filter(r => r.querySelector('.on').checked).map(r => { const m = r.querySelector('.mat').value.trim();
-    return { nome: r.querySelector('.nome').value.trim(), cargo: r.querySelector('.cargo').value.trim(), extra: r.dataset.cpf ? m : (m ? 'Matrícula ' + m : 'Matrícula ________') }; });
+    return { ip: !!r.dataset.ip, nome: r.querySelector('.nome').value.trim(), cargo: r.querySelector('.cargo').value.trim(), extra: r.dataset.cpf ? m : (m ? 'Matrícula ' + m : 'Matrícula ________') }; })
+    .sort((a, b) => a.ip - b.ip);
   return { numero:g('numero'), ano:g('ano'), dataTermo: extenso(g('dataTermo')), obra:g('obra'), bairro:g('bairro'), projeto:g('projeto'),
     servicos:[...document.querySelectorAll('#servicos .srv')].map(r => ({desc:r.querySelector('.desc').value, qtdAut:r.querySelector('.qa').value, qtdExec:r.querySelector('.qe').value, unit:r.querySelector('.un').value})).filter(s => s.desc || s.qtdAut),
     checklist: CHECK.map((t, i) => ({desc:t, res:(document.querySelector('input[name=c'+i+']:checked') || {}).value || ''})),
@@ -720,17 +744,31 @@ function restaurar(S) {
 }
 let ultima = null;
 function proxNumero(n) { const m = /^(.*?)(\d+)$/.exec((n || '').trim()); return m ? m[1] + String(+m[2] + 1).padStart(m[2].length, '0') : ''; }
-function proximaObra(S) { ultima = S; limpar(); $('ano').value = S.ano; $('dataTermo').value = S.dataTermo; $('numero').value = proxNumero(S.numero);
+function proximaObra(S) { ultima = S; limpar(); $('ano').value = S.ano; $('dataTermo').value = S.dataTermo; $('numero').value = proxNumero(S.numero); { const m = maxNumero(S.ano), w = (S.numero.match(/\d+\s*$/) || [''])[0].trim().length || 3; if (m + 1 > (+(($('numero').value.match(/\d+$/) || [0])[0]))) $('numero').value = String(m + 1).padStart(w, '0'); }
   $('bDesf').hidden = false; $('stat').textContent = 'PDF gerado. Formulário pronto para a próxima obra' + ($('numero').value ? ' (relatório nº ' + $('numero').value + ').' : '.'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function desfazer() { if (!ultima) return; restaurar(ultima); ultima = null; $('bDesf').hidden = true; $('stat').textContent = 'Obra anterior restaurada.'; }
-function salvarAss() { store.set('ass3', [...document.querySelectorAll('#assinantes .sig')].map(r => ({nome:r.querySelector('.nome').value, cargo:r.querySelector('.cargo').value, mat:r.querySelector('.mat').value, on:r.querySelector('.on').checked, cpf:!!r.dataset.cpf}))); }
+function salvarAss() { store.set('ass3', [...document.querySelectorAll('#assinantes .sig')].map(r => ({nome:r.querySelector('.nome').value, cargo:r.querySelector('.cargo').value, mat:r.querySelector('.mat').value, on:r.querySelector('.on').checked, cpf:!!r.dataset.cpf, ip:!!r.dataset.ip}))); }
+function hist() { return store.get('hist') || []; }
+const normNum = (n, a) => String(n || '').trim().toLowerCase() + '/' + String(a || '').trim();
+function renderHist() {
+  const h = hist(), cont = {}; h.forEach(x => { const k = normNum(x.numero, x.ano); cont[k] = (cont[k] || 0) + 1; });
+  $('histList').innerHTML = h.length ? h.map((x, i) => `<div class="hi${cont[normNum(x.numero, x.ano)] > 1 ? ' dup' : ''}"><b>${esc(x.numero || 's/nº')}/${esc(x.ano)}</b><span class="o">${esc(x.obra || '(sem obra)')}</span><button title="Remover do histórico" onclick="delHist(${i})">✕</button><span class="d">${esc(x.quando)}</span></div>`).join('') : '<div class="empty">Nenhum PDF gerado ainda.</div>'; }
+function delHist(i) { const h = hist(); h.splice(i, 1); store.set('hist', h); renderHist(); }
+function limparHist() { if (confirm('Apagar todo o histórico de PDFs gerados?')) { store.set('hist', []); renderHist(); } }
+function addHist(D) { const h = hist(); const d = new Date();
+  h.unshift({ numero: D.numero, ano: D.ano, obra: D.obra, quando: d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) });
+  store.set('hist', h.slice(0, 300)); renderHist(); }
+function maxNumero(ano) { let m = 0; hist().forEach(x => { if (String(x.ano).trim() === String(ano).trim()) { const r = /(\d+)\s*$/.exec(x.numero || ''); if (r) m = Math.max(m, +r[1]); } }); return m; }
 function gerar() {
   salvarAss(); const D = coletar();
   if (!D.assinantes.length) { alert('Marque ao menos um assinante.'); return; }
+  const dup = hist().find(x => normNum(x.numero, x.ano) === normNum(D.numero, D.ano) && D.numero.trim());
+  if (dup && !confirm('O relatório nº ' + D.numero + '/' + D.ano + ' já foi gerado para "' + (dup.obra || 'outra obra') + '" (' + dup.quando + ').\n\nGerar mesmo assim com o mesmo número?')) return;
   const doc = gerarTermo(window.jspdf.jsPDF, D, FOOTER);
   const slug = (D.obra || 'obra').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_').slice(0, 50);
   const S = snapshot();
   doc.save('Relatorio_de_Vistoria_' + (D.numero ? D.numero.replace(/\W/g,'-') + '_' : '') + slug + '.pdf');
+  addHist(D);
   if ($('seq').checked) proximaObra(S);
 }
 // Obras com orçamento aprovado (ofícios SMOB/DIIP e painel obras.ipfoz.com.br, 30/10/2026). Campos vazios: preencher à mão.
@@ -1048,7 +1086,12 @@ function exemplo() { limpar(); const set = (id, v) => { $(id).value = v; };
   set('obsTec','Luminária LED Tradetek Agnes 50W (AGN7050D4, 4000K); altura de montagem de 7,6 a 8 m; avanço de 2,50 m; angulação de 10°; derivação em cabo PP 3 x 1,5 mm² 1 kV; luminárias aterradas e ligadas em fases intercaladas (RS, RT, ST); via classe C4 (EN 13201).');
   $('servicos').innerHTML = ''; addServ({desc:'Instalação de ponto não exclusivo de iluminação pública adicional em outras vias – Cota Expansão 3', qtdAut:'26', unit:'661,62'}); }
 
-function init() { buildChecklist(); montarObras(); (store.get('ass3') || ASS0).forEach(addAss); addServ(); addPen(); const s = store.get('seq'); $('seq').checked = s === null || s === undefined ? true : !!s; }
+function carregarAss() {
+  const a = store.get('ass3'); if (!a) return ASS0;
+  a.forEach(x => { if (x.cpf) x.ip = true; });
+  IPFOZ.forEach(p => { if (!a.some(x => x.nome === p.nome)) { const i = a.findIndex(x => x.ip); a.splice(i < 0 ? a.length : i, 0, {...p}); } });
+  return a; }
+function init() { buildChecklist(); montarObras(); carregarAss().forEach(addAss); renderHist(); addServ(); addPen(); const s = store.get('seq'); $('seq').checked = s === null || s === undefined ? true : !!s; }
 init();
 </script>
 </body>
