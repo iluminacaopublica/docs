@@ -57,14 +57,14 @@ button.pri { background:var(--acc); color:var(--accfg); border-color:var(--acc);
 <div class="wrap">
   <h1>Relatório de Vistoria de Fiscalização</h1>
   <p class="sub">SMOB/DIIP · Contrato nº 208/2025 · preencha os campos e gere o PDF com o timbrado da Prefeitura.</p>
-  <div class="seq"><input type="checkbox" id="seq" checked onchange="store.set('seq', this.checked)"><label for="seq"><b>Gerar documentos em sequência.</b> Depois de gerar o PDF, o formulário limpa os dados da obra e mantém assinantes, ano e data do relatório, pronto para a próxima obra.</label></div>
+  <div class="seq"><input type="checkbox" id="seq" checked onchange="store.set('seq', this.checked)"><label for="seq"><b>Gerar documentos em sequência.</b> Depois de gerar o PDF, o formulário limpa os dados da obra e mantém assinantes e ano, e a data volta para o dia de hoje, pronto para a próxima obra.</label></div>
   <div class="tools"><button onclick="exemplo()">Carregar exemplo (Rua Manoel Laurindo)</button><select id="obraAprov" onchange="carregarObra(this.value)"></select><button onclick="limpar()">Limpar formulário</button></div>
   <div id="avisoObra" hidden></div>
 
   <section><h2>1. Relatório</h2><div class="grid">
     <div><label>Nº do relatório</label><input id="numero" placeholder="ex.: 012"></div>
     <div><label>Ano</label><input id="ano" value="2026"></div>
-    <div><label>Data do relatório</label><input id="dataTermo" type="date"></div>
+    <div><label>Data do relatório (preenchida com hoje; pode alterar)</label><input id="dataTermo" type="date"></div>
   </div></section>
 
   <section><h2>2. Identificação da obra</h2><div class="grid">
@@ -744,7 +744,7 @@ function restaurar(S) {
 }
 let ultima = null;
 function proxNumero(n) { const m = /^(.*?)(\d+)$/.exec((n || '').trim()); return m ? m[1] + String(+m[2] + 1).padStart(m[2].length, '0') : ''; }
-function proximaObra(S) { ultima = S; limpar(); $('ano').value = S.ano; $('dataTermo').value = S.dataTermo; $('numero').value = proxNumero(S.numero); { const m = maxNumero(S.ano), w = (S.numero.match(/\d+\s*$/) || [''])[0].trim().length || 3; if (m + 1 > (+(($('numero').value.match(/\d+$/) || [0])[0]))) $('numero').value = String(m + 1).padStart(w, '0'); }
+function proximaObra(S) { ultima = S; limpar(); $('ano').value = S.ano; $('dataTermo').value = hoje(); $('numero').value = proxNumero(S.numero); { const m = maxNumero(S.ano), w = (S.numero.match(/\d+\s*$/) || [''])[0].trim().length || 3; if (m + 1 > (+(($('numero').value.match(/\d+$/) || [0])[0]))) $('numero').value = String(m + 1).padStart(w, '0'); }
   $('bDesf').hidden = false; $('stat').textContent = 'PDF gerado. Formulário pronto para a próxima obra' + ($('numero').value ? ' (relatório nº ' + $('numero').value + ').' : '.'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function desfazer() { if (!ultima) return; restaurar(ultima); ultima = null; $('bDesf').hidden = true; $('stat').textContent = 'Obra anterior restaurada.'; }
 function salvarAss() { store.set('ass3', [...document.querySelectorAll('#assinantes .sig')].map(r => ({nome:r.querySelector('.nome').value, cargo:r.querySelector('.cargo').value, mat:r.querySelector('.mat').value, on:r.querySelector('.on').checked, cpf:!!r.dataset.cpf, ip:!!r.dataset.ip}))); }
@@ -1078,8 +1078,9 @@ function montarObras() {
 }
 const HIGOR = 'Eng. Higor dos Santos Alves, CREA BA-3000150337/D';
 function marcarHigor(on) { if (on) $('projeto').value = HIGOR; else if ($('projeto').value === HIGOR) $('projeto').value = ''; }
+const hoje = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 function limpar() { avisar(''); document.querySelectorAll('.wrap input:not(.on):not([type=radio]):not(.nome):not(.cargo):not(.mat),.wrap textarea,.wrap select').forEach(e => { if (e.id !== 'ano') e.value = ''; });
-  $('higor').checked = false; document.querySelectorAll('input[type=radio]').forEach(r => r.checked = false); $('servicos').innerHTML = ''; $('pendencias').innerHTML = ''; fotos = []; renderFotos(); addServ(); addPen(); }
+  $('higor').checked = false; document.querySelectorAll('input[type=radio]').forEach(r => r.checked = false); $('servicos').innerHTML = ''; $('pendencias').innerHTML = ''; fotos = []; renderFotos(); $('dataTermo').value = hoje(); addServ(); addPen(); }
 function exemplo() { limpar(); const set = (id, v) => { $(id).value = v; };
   set('numero','001'); set('obra','Implantação de iluminação pública na Rua Manoel Laurindo (antiga Rua São Borja)'); set('bairro','Alto da Boa Vista');
   set('projeto', HIGOR); $('higor').checked = true;
@@ -1091,7 +1092,7 @@ function carregarAss() {
   a.forEach(x => { if (x.cpf) x.ip = true; const p = IPFOZ.find(q => q.nome === x.nome); if (p) { x.cpf = true; x.ip = true; x.cargo = p.cargo; } });
   IPFOZ.forEach(p => { if (!a.some(x => x.nome === p.nome)) { const i = a.findIndex(x => x.ip); a.splice(i < 0 ? a.length : i, 0, {...p}); } });
   return a; }
-function init() { buildChecklist(); montarObras(); carregarAss().forEach(addAss); renderHist(); addServ(); addPen(); const s = store.get('seq'); $('seq').checked = s === null || s === undefined ? true : !!s; }
+function init() { $('dataTermo').value = hoje(); buildChecklist(); montarObras(); carregarAss().forEach(addAss); renderHist(); addServ(); addPen(); const s = store.get('seq'); $('seq').checked = s === null || s === undefined ? true : !!s; }
 init();
 </script>
 </body>
