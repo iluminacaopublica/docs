@@ -1,6 +1,17 @@
 # Changelog
 
-Formulário de Relatório de Vistoria com Parecer de Fiscalização (antes: Termo de Aceite de Obra de Expansão) · SMOB/DIIP · Contrato nº 208/2025.
+Formulário de Relatório de Vistoria de Fiscalização (antes: Relatório de Vistoria com Parecer de Fiscalização; antes: Termo de Aceite de Obra de Expansão) · SMOB/DIIP · Contrato nº 208/2025.
+
+## 2.2 – 05/11/2026
+
+### Alterado
+- Documento renomeado para **Relatório de Vistoria de Fiscalização**.
+- A data do relatório vem preenchida com o dia de hoje (editável).
+- Campos em branco de assinatura não imprimem mais o rótulo (sem "Matrícula ________").
+
+### Adicionado
+- Histórico de PDFs gerados, à esquerda, com número e obra; aviso ao repetir um número já usado.
+- "Ciente (s):" antes das assinaturas da IP FOZ, com Daniella de Oliveira e Alan Pereira Silva selecionáveis (campo CPF).
 
 ## 2.1 – 03/11/2026
 
